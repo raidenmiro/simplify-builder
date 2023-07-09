@@ -1,12 +1,10 @@
-import { ListNode } from "./list";
+import { splitBy } from "../transform/split.by";
 
 export const OPERATORS = new Set(["/", "x", "-", "+"]);
-
 const INVALID_EXPRESSION = void 0;
 const BRACKETS_PAIR = { "{": "}", "(": ")", "[": "]" };
 
 export enum Tok {
-  Root,
   Ident,
   Number,
   OpenBr,
@@ -15,12 +13,13 @@ export enum Tok {
 }
 
 export type Token<Value = unknown> = Readonly<{
-  type: Tok;
   value: Value;
+  type: Tok;
 }>;
 
-/* char code definition */
+type Bracket = keyof typeof BRACKETS_PAIR;
 
+/* char code definition */
 function isDigit(code: number) {
   return code >= 0x0030 && code <= 0x0039;
 }
@@ -34,7 +33,22 @@ function isPlusOrMinus(code: number) {
 }
 
 function isBracket(code: number) {
-  return code === 40 || code === 41;
+  const openedBr = Object.keys(BRACKETS_PAIR);
+  return openedBr.some((opBr) => {
+    const pairBr = BRACKETS_PAIR[opBr as Bracket];
+    return code === pairBr.charCodeAt(0) || code === opBr.charCodeAt(0);
+  });
+}
+
+/* cast */
+function int(v: string) {
+  const p = Number.parseFloat(v);
+  return isNaN(p) ? 0 : p;
+}
+
+/* create token */
+function buildNumber(value: string) {
+  return { value, type: Tok.Number };
 }
 
 /* parser */
@@ -45,13 +59,17 @@ function isBracket(code: number) {
  * const result = tokenize('5.5 + 5 * 2 - (3 - 1)');
  * ```
  */
-export function parse(s: string) {
-  const chars = s.trim();
-  const tokens = new ListNode({ type: Tok.Root, value: [] });
+export function parse(s: string | string[]) {
+  const chars = Array.isArray(s)
+    ? s
+    : splitBy(s.trim(), { separator: Array.from(OPERATORS) });
+
+  const openedBr: Bracket[] = [];
+  const root = { type: "Expression", body: [] };
 
   let i = 0;
   while (i < s.length) {
-    const ch = s[i++].charCodeAt(0);
+    const ch = chars[i++].charCodeAt(0);
 
     if (isWhitespace(ch)) {
       return INVALID_EXPRESSION;
@@ -66,5 +84,5 @@ export function parse(s: string) {
     }
   }
 
-  return tokens.next ?? INVALID_EXPRESSION;
+  return root;
 }
