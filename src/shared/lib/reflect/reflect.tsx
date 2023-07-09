@@ -30,12 +30,14 @@ export function reflect<Props>(config: {
   const props = {} as { [Key in keyof Props]: Props[Key] };
 
   for (const key in bind) {
-    const value = bind[key];
+    if (Object.hasOwn(bind, key)) {
+      const value = bind[key];
 
-    if (isAtom(value)) {
-      atoms[key] = value;
-    } else {
-      props[key] = value as never; // 😈
+      if (isAtom(value)) {
+        atoms[key] = value;
+      } else {
+        props[key] = value as never; // 😈
+      }
     }
   }
 
