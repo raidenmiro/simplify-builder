@@ -18,6 +18,7 @@
     "jsxImportSource": "preact",
     "strictNullChecks": true,
     "baseUrl": "./src",
+    "types": ["vitest/globals"],
     "paths": {
       "~/*": ["./*"]
     }
