@@ -1,15 +1,26 @@
-type Operator = keyof typeof priorityList;
-const priorityList = {
-  "+": 1,
-  "-": 1,
-  "(": 0,
-  ")": 0,
-  "/": 2,
-  x: 2,
+import { OPERATORS } from "../parser/parser";
+
+enum Priority {
+  SANS = 0,
+  LOW = 1,
+  MIDDLE = 2,
+  HIGH = 3,
+}
+
+export const UNARY_SYMBOL = "u";
+
+type Operator = keyof typeof PRIORITY_SPEC;
+const PRIORITY_SPEC = {
+  "+": Priority.LOW,
+  "-": Priority.LOW,
+  "(": Priority.SANS,
+  ")": Priority.SANS,
+  "/": Priority.HIGH,
+  "*": Priority.HIGH,
 };
 
 function checkPriority(a: string, b: string) {
-  return priorityList[a as Operator] <= priorityList[b as Operator];
+  return PRIORITY_SPEC[a as Operator] <= PRIORITY_SPEC[b as Operator];
 }
 
 /**
@@ -21,9 +32,12 @@ export function infixToPostfix(expression: string[]) {
   const stack: string[] = [],
     postfix: string[] = [];
 
-  for (const current of expression) {
-    if (!(current in priorityList)) {
-      postfix.push(current);
+  for (let i = 0; i < expression.length; i++) {
+    const current = expression[i];
+    const prev = expression[i - 1];
+
+    if (!(current in PRIORITY_SPEC)) {
+      postfix.push(current.trim());
       continue;
     }
 
@@ -38,14 +52,21 @@ export function infixToPostfix(expression: string[]) {
       }
 
       stack.pop();
-    } else {
-      const last = stack[stack.length - 1];
-      while (stack.length > 0 && checkPriority(current, last)) {
-        postfix.push(stack.pop()!);
-      }
-
-      stack.push(current);
+      continue;
     }
+
+    // handle case with unary minus
+    if (current === "-" && (!prev || prev === "(" || OPERATORS.has(prev))) {
+      postfix.push(UNARY_SYMBOL);
+      continue;
+    }
+
+    const last = stack[stack.length - 1];
+    while (stack.length > 0 && checkPriority(current, last)) {
+      postfix.push(stack.pop()!);
+    }
+
+    stack.push(current);
   }
 
   while (stack.length > 0) postfix.push(stack.pop()!);
